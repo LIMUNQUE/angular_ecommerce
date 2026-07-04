@@ -48,11 +48,7 @@ products = signal<Product[]>([]);
 
 **Signals** son la nueva forma reactiva de Angular para saber exactamente cuándo cambia un dato. En lugar de revisar toda la aplicación para ver si algo cambió (Change Detection tradicional), Angular sabe exactamente qué pedazo del HTML actualizar cuando haces `this.products.set(nuevaData)`. Es muchísimo más rápido.
 
-### C. Zoneless (Sin Zone.js)
-
-Tradicionalmente, Angular usaba una librería llamada `zone.js` para "magicamente" detectar cuándo hacias un clic o llegaba una petición HTTP, y así actualizar la pantalla. En `app.config.ts` usamos `provideZonelessChangeDetection()`. Esto elimina `zone.js` por completo, haciendo que la aplicación cargue más rápido y consuma menos memoria. Con Zoneless, Angular confía en las **Signals** para actualizar la vista.
-
-### D. Control de Flujo Integrado (`@if`, `@for`, `@defer`)
+### C. Control de Flujo Integrado (`@if`, `@for`, `@defer`)
 
 Ya no usamos los viejos `*ngIf` o `*ngFor`. Angular ahora tiene una sintaxis propia directamente en el HTML:
 
