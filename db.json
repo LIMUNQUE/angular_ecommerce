@@ -1,0 +1,25 @@
+{
+  "products": [
+    {
+      "id": "1",
+      "name": "Laptop Pro 15",
+      "price": 1299.99,
+      "description": "Portátil de alto rendimiento para profesionales creativos.",
+      "imageUrl": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      "id": "2",
+      "name": "Auriculares Noise Cancelling",
+      "price": 249.50,
+      "description": "Auriculares inalámbricos con cancelación de ruido activa superior.",
+      "imageUrl": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop"
+    },
+    {
+      "id": "3",
+      "name": "Smartwatch V3",
+      "price": 199.00,
+      "description": "Reloj inteligente con monitor de salud y batería de larga duración.",
+      "imageUrl": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600&auto=format&fit=crop"
+    }
+  ]
+}

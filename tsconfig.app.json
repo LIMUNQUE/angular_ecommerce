@@ -4,7 +4,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": []
+    "types": [],
+    "module": "ESNext",
+    "target": "ES2022",
+    "moduleResolution": "bundler"
   },
   "include": [
     "src/**/*.ts"

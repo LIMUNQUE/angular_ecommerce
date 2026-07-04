@@ -1,0 +1,26 @@
+<div class="header-actions">
+  <a routerLink="/" class="btn btn-outline">&larr; Volver al catálogo</a>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger">{{ error() }}</div>
+}
+
+<!-- Carga diferida del componente detallado con un skeleton loader de fallback -->
+@defer (when !loading()) {
+  @if (product(); as p) {
+    <div class="product-detail-card">
+      <img [src]="p.imageUrl" [alt]="p.name" class="detail-image">
+      <div class="detail-content">
+        <h2>{{ p.name }}</h2>
+        <p class="price">${{ p.price }}</p>
+        <p class="description">{{ p.description }}</p>
+        <div class="actions">
+           <a [routerLink]="['/products/edit', p.id]" class="btn btn-primary">Editar Producto</a>
+        </div>
+      </div>
+    </div>
+  }
+} @placeholder (minimum 500ms) {
+  <div class="product-detail-card loading-skeleton" style="height: 500px;"></div>
+}

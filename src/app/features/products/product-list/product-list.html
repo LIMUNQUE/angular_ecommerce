@@ -1,0 +1,43 @@
+<div class="header-actions">
+  <h2>Catálogo de Productos</h2>
+  <a routerLink="/products/new" class="btn btn-primary">Agregar Producto</a>
+</div>
+
+@if (error()) {
+  <div class="alert alert-danger">{{ error() }}</div>
+}
+
+<!-- Usamos @defer para cargar la grilla de productos de forma diferida (lazy load). 
+     Esto mejora el rendimiento inicial. El bloque @placeholder se muestra mientras carga. -->
+@defer (when !loading()) {
+  @if (products().length === 0) {
+    <p>No hay productos disponibles.</p>
+  } @else {
+    <div class="products-grid">
+      <!-- El track en el @for optimiza el renderizado identificando elementos únicos -->
+      @for (product of products(); track product.id) {
+        <div class="product-card">
+          <img [src]="product.imageUrl" [alt]="product.name" class="product-image">
+          <div class="product-content">
+            <h3>{{ product.name }}</h3>
+            <p class="price">${{ product.price }}</p>
+            <p class="description">{{ product.description }}</p>
+            <div class="card-actions">
+              <!-- Ruta dinámica al detalle del producto usando array params -->
+              <a [routerLink]="['/products', product.id]" class="btn btn-primary">Ver Detalles</a>
+              <a [routerLink]="['/products/edit', product.id]" class="btn btn-outline">Editar</a>
+              <button (click)="deleteProduct(product.id)" class="btn btn-danger">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+} @placeholder (minimum 500ms) {
+  <div class="products-grid">
+    <!-- Skeleton loader para dar feedback visual de que está cargando -->
+    <div class="product-card loading-skeleton" style="height: 400px;"></div>
+    <div class="product-card loading-skeleton" style="height: 400px;"></div>
+    <div class="product-card loading-skeleton" style="height: 400px;"></div>
+  </div>
+}
