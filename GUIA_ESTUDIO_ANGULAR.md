@@ -1,141 +1,179 @@
-# Guía de Estudio: Angular Moderno (v21) para Desarrollo Profesional
+# Guía Definitiva de Angular Moderno (v21) para Principiantes
 
-Bienvenido a esta guía detallada. Este documento fue creado específicamente para que un desarrollador Junior pueda entender a fondo cómo está construido este proyecto de e-commerce "Hello World", por qué se tomaron ciertas decisiones arquitectónicas y qué características modernas de Angular se están utilizando.
-
----
-
-## 1. Arquitectura y Estructura de Carpetas
-
-En aplicaciones profesionales, el código no se pone al azar. Se divide por responsabilidades para que el proyecto sea escalable. En este proyecto utilizamos una variación de la arquitectura **Core/Feature/Shared**:
-
-```text
-src/app/
-├── core/                   # Cosas globales que se cargan UNA vez en toda la app.
-│   ├── components/         # Componentes estructurales (Navbar, Footer, Layout).
-│   ├── models/             # Interfaces (tipados estrictos de TypeScript).
-│   └── services/           # Servicios singleton (ej. ProductService).
-├── features/               # Lógica de negocio agrupada por dominio.
-│   └── products/           # Dominio de "productos".
-│       ├── product-list/
-│       ├── product-detail/
-│       └── product-form/
-├── app.ts                  # Componente raíz (Shell).
-├── app.routes.ts           # Configuración de rutas principales.
-└── app.config.ts           # Configuración global (Zoneless, HttpClient, Router).
-```
-
-**¿Por qué hacerlo así?**
-Si mañana agregas un módulo de `usuarios` o `facturas`, simplemente creas nuevas carpetas dentro de `features/`. El `core/` se mantiene limpio solo con lo esencial para que la app arranque.
+¡Bienvenido al mundo de Angular! Esta guía está diseñada para que cualquier persona que esté aprendiendo el framework hoy mismo pueda entender cómo construir una aplicación escalable, profesional y moderna, sin agobiarse con técnicas del pasado.
 
 ---
 
-## 2. Características de Angular Moderno (Zoneless y Standalone)
+## 1. ¿Cómo se relaciona todo? (El Flujo de la Aplicación)
 
-Angular ha cambiado drásticamente en sus últimas versiones. Aquí tienes lo más destacado que usamos:
+Cuando abres tu aplicación en el navegador, Angular sigue una cadena de eventos muy clara:
 
-### A. Componentes Standalone (Sin `NgModule`)
+1. **`main.ts`**: Es el punto de entrada. Aquí Angular arranca la aplicación (Bootstrap) usando nuestro componente principal (`App`) y la configuración global (`appConfig`).
+2. **`app.config.ts`**: Aquí configuramos el "cerebro" de la app: habilitamos las rutas (`provideRouter`) y el motor de reactividad (`provideZonelessChangeDetection()`).
+3. **`app.routes.ts`**: Es el mapa de navegación. Le dice a Angular qué componente mostrar dependiendo de la URL (ej. si vas a `/products/1`, carga el `ProductDetail`).
+4. **`app.ts` (Componente Raíz)**: Es el "cascarón". En su HTML (`<app-navbar></app-navbar>` y `<router-outlet></router-outlet>`), pinta el menú de navegación y deja un espacio dinámico (`router-outlet`) donde Angular inyectará las páginas según la ruta.
+5. **Servicios (`product.service.ts`)**: Son los proveedores de datos. Si un componente necesita una lista de productos, no la inventa, se la pide al servicio.
 
-Si ves el código de cualquier componente (ej. `navbar.ts`), notarás que el decorador `@Component` tiene un array llamado `imports: []`.
-Ya no existen los archivos `app.module.ts`. Ahora cada componente es independiente y debe importar explícitamente lo que necesita (ej. `RouterLink`, `ReactiveFormsModule`). Esto hace que el código sea más predecible y fácil de "vaguear" (lazy load).
+---
+
+## 2. Conceptos Clave del Angular Moderno
+
+Si acabas de empezar a aprender, concéntrate en estas 3 herramientas principales que hacen a Angular tan poderoso hoy en día:
+
+### A. Componentes Standalone (Independientes)
+Cada bloque de tu pantalla (un botón, una barra de navegación, una página entera) es un **Componente**.
+Un componente tiene 3 partes (que pueden estar en el mismo archivo o separados):
+- **La clase (TypeScript)**: La lógica y los datos.
+- **La plantilla (HTML)**: Lo que el usuario ve.
+- **Los estilos (CSS)**: El diseño.
+
+En Angular moderno usamos el decorador `@Component`. Lo importante es el array `imports: []`. Si tu componente va a usar un formulario, importas `ReactiveFormsModule`. Si va a usar enlaces de rutas, importas `RouterLink`. Cada componente es autosuficiente.
 
 ### B. Signals (`signal()`)
-
-En `product-list.ts`, en lugar de hacer `products: Product[] = [];`, hicimos:
-
+Las **Signals** son "variables inteligentes". 
+En un proyecto normal de JS, si cambias `let nombre = "Juan"` a `"Pedro"`, el HTML no se entera automáticamente.
+En Angular, si haces:
 ```typescript
-products = signal<Product[]>([]);
+nombre = signal('Juan');
 ```
+Y en tu HTML pones `<h1>{{ nombre() }}</h1>`, Angular conecta ambos. Cuando luego en tu código haces `this.nombre.set('Pedro')`, Angular actualiza instantáneamente solo ese `<h1>` en la pantalla, sin gastar recursos revisando toda la app. Es magia pura y muy rápida.
 
-**Signals** son la nueva forma reactiva de Angular para saber exactamente cuándo cambia un dato. En lugar de revisar toda la aplicación para ver si algo cambió (Change Detection tradicional), Angular sabe exactamente qué pedazo del HTML actualizar cuando haces `this.products.set(nuevaData)`. Es muchísimo más rápido.
-
-### C. Control de Flujo Integrado (`@if`, `@for`, `@defer`)
-
-Ya no usamos los viejos `*ngIf` o `*ngFor`. Angular ahora tiene una sintaxis propia directamente en el HTML:
-
-- `@if (condicion) { ... }`: Más limpio e intuitivo.
-- `@for (item of items; track item.id)`: Mucho más rápido. El `track` es obligatorio porque le dice a Angular cómo identificar cada elemento de forma única, evitando re-renderizar listas enteras.
-- **`@defer`**: _Esta es una de las joyas de Angular moderno_. En `product-list.html` envolvemos la lista en `@defer`. Esto significa que el código de esa sección se carga de manera perezosa (Lazy Loading) separándolo del bundle principal. El `@placeholder` muestra una estructura falsa ("Skeleton") mientras carga.
+### C. Control de Flujo (`@if`, `@for`, `@defer`)
+Para mostrar cosas condicionalmente en el HTML, Angular tiene su propia sintaxis:
+- `@if (productoActivo()) { <p>¡Está disponible!</p> }`
+- `@for (item of productos(); track item.id) { <li>{{ item.name }}</li> }`
+- **`@defer`**: Si tienes una tabla de productos muy pesada, la envuelves en `@defer`. Angular cargará el resto de la página primero de forma súper rápida, y luego, en segundo plano (o cuando el usuario haga scroll), descargará el código de la tabla.
 
 ---
 
-## 3. Inyección de Dependencias Moderna (`inject`)
+## 3. Entendiendo el Testing (Pruebas Unitarias)
 
-En el pasado, inyectábamos servicios dentro del `constructor()`. Ahora la buena práctica profesional es usar la función `inject()`:
+En proyectos profesionales, nunca subimos código sin probarlo (Testing). Utilizamos **Vitest** (un motor de pruebas súper rápido). Las pruebas viven en archivos que terminan en `.spec.ts`.
+
+### ¿Cómo están construidos los tests?
+Miremos el test de nuestro componente principal (`app.spec.ts`):
 
 ```typescript
-// Antes:
-constructor(private productService: ProductService) {}
+// 1. Importamos las herramientas de pruebas de Angular
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+import { provideRouter } from '@angular/router';
 
-// Ahora (Moderno y Profesional):
-private productService = inject(ProductService);
+// 2. 'describe' agrupa un bloque de pruebas sobre algo específico.
+describe('App Component', () => {
+  
+  // 3. 'beforeEach' se ejecuta ANTES de cada prueba. Aquí preparamos el entorno.
+  beforeEach(async () => {
+    // TestBed es un simulador de Angular. Le pasamos las configuraciones necesarias.
+    await TestBed.configureTestingModule({
+      imports: [App],
+      providers: [provideRouter([])] // Simulamos el router para que no falle
+    }).compileComponents();
+  });
+
+  // 4. 'it' es una prueba individual.
+  it('debe crearse la aplicación', () => {
+    // Creamos el componente en memoria
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    // 'expect' es la aserción: Afirmamos que el componente existe (es verdadero)
+    expect(app).toBeTruthy();
+  });
+});
 ```
-
-**¿Por qué?** Facilita la herencia de clases (no lidias con `super()`), mantiene el constructor limpio y permite crear funciones reutilizables fuera del componente que también pueden inyectar dependencias.
+Para el servicio (`product.service.spec.ts`), simplemente inyectamos el servicio y verificamos que sus métodos devuelvan los datos esperados de nuestro array estático.
 
 ---
 
-## 4. Manejo de Asincronismo y API con HTTP
+## 4. TUTORIAL PASO A PASO: Cómo construir este E-Commerce desde Cero
 
-Para hacer peticiones a servidores, Angular provee `HttpClient` (habilitado con `provideHttpClient()` en `app.config.ts`).
+Si quieres replicar este proyecto por tu cuenta para practicar, sigue estos exactos pasos en tu terminal y editor:
 
-En `product.service.ts`, los métodos retornan **Observables** de `RxJS`:
+### Paso 1: Crear el proyecto
+Abre tu terminal y usa el Angular CLI (debes tener NodeJS y pnpm instalados):
+```bash
+# Crea un proyecto nuevo con las últimas características
+npx @angular/cli new mi-tienda --package-manager=pnpm --style=css --routing=true
+```
+*(Durante la instalación, elige la opción por defecto. En Angular moderno, todo es Standalone por defecto).*
 
+### Paso 2: Configurar Zoneless
+Angular 21 crea el proyecto con Zone.js por defecto por retrocompatibilidad. Para hacerlo puramente moderno (Zoneless):
+1. Abre `src/app/app.config.ts`.
+2. Cambia `provideZoneChangeDetection` por `provideZonelessChangeDetection()`.
+
+### Paso 3: Crear el modelo de datos
+Crea un archivo manual en `src/app/core/models/product.model.ts`:
 ```typescript
-getProducts(): Observable<Product[]> {
-  return this.http.get<Product[]>(this.apiUrl);
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  imageUrl: string;
 }
 ```
 
-Un Observable es como una promesa pero mucho más poderosa: permite cancelar peticiones, reintentar si hay errores y manejar flujos de datos continuos.
-En el componente nos "suscribimos" (`.subscribe()`) para escuchar cuando el servidor nos responda.
+### Paso 4: Crear el Servicio de Productos
+En la terminal, genera el servicio que manejará los datos:
+```bash
+npx ng generate service core/services/product
+```
+Abre el archivo generado (`product.service.ts`), inyecta un array estático de productos y crea métodos que devuelvan `Observable<Product[]>` usando `of()` de la librería `rxjs`, tal como lo hicimos en este proyecto.
 
-**El Backend Mock (json-server)**:
-Usamos `json-server` en el puerto 3000 porque en el mundo real, los equipos de Frontend a menudo no pueden esperar a que Backend termine las APIs. `json-server` lee nuestro `db.json` y automáticamente crea rutas (GET, POST, PUT, DELETE), manejando además los dolores de cabeza del CORS (el bloqueo de seguridad del navegador cuando llamas a otro puerto).
+### Paso 5: Crear el Componente del Navbar (Core)
+```bash
+npx ng generate component core/components/navbar
+```
+Abre `navbar.ts`. En el array de `imports: []`, añade `RouterLink`.
+En `navbar.html`, crea una barra de navegación sencilla. Usa `routerLink="/"` para el logo y `routerLink="/products/new"` para crear un producto.
 
----
-
-## 5. Rutas (Routing) Dinámicas
-
-En `app.routes.ts` definimos la navegación. Lo más interesante es la ruta dinámica:
-`{ path: 'products/:id', component: ProductDetail }`
-
-El `:id` es un comodín. Si el usuario va a `/products/123`, Angular carga `ProductDetail`.
-Dentro del componente, usamos `ActivatedRoute` para extraer ese `123`:
-
-```typescript
-const id = this.route.snapshot.paramMap.get('id');
+### Paso 6: Crear los Componentes de Pantalla (Features)
+Genera las 3 pantallas principales:
+```bash
+npx ng generate component features/products/product-list
+npx ng generate component features/products/product-detail
+npx ng generate component features/products/product-form
 ```
 
----
-
-## 6. Formularios Reactivos (Reactive Forms)
-
-En `product-form.ts` creamos el formulario en TypeScript, no en el HTML. Esto es "Reactive Forms".
-
+### Paso 7: Configurar las Rutas
+Abre `src/app/app.routes.ts` y conecta las URLs con tus nuevos componentes:
 ```typescript
-this.productForm = this.fb.group({
-  name: ['', [Validators.required, Validators.minLength(3)]],
-});
+import { Routes } from '@angular/router';
+import { ProductList } from './features/products/product-list/product-list';
+import { ProductDetail } from './features/products/product-detail/product-detail';
+import { ProductForm } from './features/products/product-form/product-form';
+
+export const routes: Routes = [
+  { path: '', component: ProductList },
+  { path: 'products/new', component: ProductForm },
+  { path: 'products/:id', component: ProductDetail }, // Ruta dinámica (recibe un ID)
+  { path: '**', redirectTo: '' } // Si pone una URL que no existe, lo manda al inicio
+];
 ```
 
-**¿Por qué es profesional?**
+### Paso 8: Programar la Lista de Productos (`product-list`)
+Abre `product-list.ts`:
+1. Importa e inyecta el servicio: `private productService = inject(ProductService);`
+2. Crea una Signal: `products = signal<Product[]>([]);`
+3. En el `ngOnInit()`, llénarla suscribiéndote al servicio: 
+   `this.productService.getProducts().subscribe(data => this.products.set(data));`
+4. En `product-list.html`, usa `@for (p of products(); track p.id)` para dibujar tarjetas HTML por cada producto. 
+5. *(Extra)*: Envuelve toda la lista en un bloque `@defer { ... } @placeholder { <div>Cargando...</div> }` para optimizar su carga.
 
-- Permite escribir validaciones complejas de forma programática.
-- Facilita hacer pruebas unitarias del formulario sin necesidad de renderizar el HTML.
-- Es inmutable y reactivo.
+### Paso 9: Conectar la App Principal
+Abre `src/app/app.ts`. Borra todo el código HTML de prueba que trae Angular por defecto y déjalo así:
+```html
+<app-navbar></app-navbar> <!-- Tu menú superior -->
+<main class="container">
+  <router-outlet></router-outlet> <!-- Aquí Angular pinta las páginas dinámicamente -->
+</main>
+```
+*(No olvides asegurarte de que `Navbar` y `RouterOutlet` estén en el array de `imports: []` del componente).*
 
----
-
-## 7. Comandos Útiles (Angular CLI)
-
-Aquí tienes los comandos del `Angular CLI` (Interfaz de Línea de Comandos) que utilizamos, y que usarás en tu día a día:
-
-| Comando                                | Descripción                                                                                                                                                      |
-| :------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ng serve` (o `npm start`)             | Levanta el servidor de desarrollo local con recarga en vivo.                                                                                                     |
-| `ng build`                             | Compila la aplicación, optimizando, minificando el código y eliminando lo que no se usa ("Tree Shaking"), dejándolo en la carpeta `dist/` listo para producción. |
-| `ng test`                              | Ejecuta las pruebas unitarias (Vitest/Karma).                                                                                                                    |
-| `ng generate component carpeta/nombre` | Crea automáticamente los archivos de un componente (.ts, .html, .css) y genera su código base. (_Atajo: `ng g c nombre`_).                                       |
-| `ng generate service carpeta/nombre`   | Genera un servicio inyectable. (_Atajo: `ng g s nombre`_).                                                                                                       |
-
----
+### Paso 10: Ejecutar y probar
+¡Listo! Levanta tu servidor local:
+```bash
+pnpm run start
+```
+Ahora tienes una base profesional, modular, reactiva (con Signals) y súper optimizada lista para seguir creciendo. ¡El límite es tu imaginación!
